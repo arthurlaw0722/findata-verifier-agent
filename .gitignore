@@ -1,0 +1,26 @@
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Environment variables / secrets
+.env
+*.env
+
+# Kaggle API key
+kaggle.json
+.kaggle/
+
+# Large datasets
+*.csv
+*.zip
+*.parquet
+*.pkl
+
+# Outputs
+outputs/*.csv
+outputs/*.zip
+
+# Mac files
+.DS_Store
