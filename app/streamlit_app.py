@@ -17,7 +17,6 @@ from agent.readiness import assess_readiness
 
 st.set_page_config(
     page_title="FinData Verifier Agent",
-    page_icon="✅",
     layout="wide"
 )
 
