@@ -13,6 +13,7 @@ from agent.leakage import detect_possible_leakage
 from agent.scoring import calculate_trust_score
 from agent.report_generator import generate_markdown_report
 from agent.proof import create_proof
+from agent.readiness import assess_readiness
 
 
 client = AgentClient(
@@ -36,6 +37,7 @@ async def run_verification_job(requirements_text: str) -> str:
     analysis = analyse_dataset(csv_path, target_column)
     leakage = detect_possible_leakage(df, target_column)
     score = calculate_trust_score(analysis, leakage)
+    readiness = assess_readiness(analysis, leakage, score)
 
     temp_report = generate_markdown_report(
         dataset_name,
@@ -64,6 +66,8 @@ async def run_verification_job(requirements_text: str) -> str:
         "dataset_name": dataset_name,
         "trust_score": score["trust_score"],
         "trust_grade": score["trust_grade"],
+        "leakage": leakage,
+        "readiness": readiness,
         "report_markdown": final_report,
         "proof": proof
     }
