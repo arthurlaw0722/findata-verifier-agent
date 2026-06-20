@@ -160,6 +160,23 @@ This demonstrates how one AI agent can hire another specialist verification agen
 
 ---
 
+## Target Leakage Safety Gate Demo
+
+This demo shows how FinData Verifier Agent prevents a downstream model from training on a dataset with target leakage.
+
+```bash
+python3 examples/leakage_gate_demo.py
+
+The sample loan dataset intentionally includes approved_status, a column that reveals the final approval outcome.
+
+The agent detects the leakage and returns:
+
+Leakage Risks: 2
+Decision: BLOCK_DOWNSTREAM_TRAINING
+Suspicious column: approved_status
+
+This demonstrates that FinData Verifier Agent is not only a data checker. It acts as a safety gate before higher-risk financial AI workflows begin.
+
 ## Production Readiness Layer
 
 The agent translates technical data risks into business-friendly readiness guidance.
