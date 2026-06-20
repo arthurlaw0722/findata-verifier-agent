@@ -166,14 +166,17 @@ This demo shows how FinData Verifier Agent prevents a downstream model from trai
 
 ```bash
 python3 examples/leakage_gate_demo.py
+```
 
-The sample loan dataset intentionally includes approved_status, a column that reveals the final approval outcome.
+The sample loan dataset intentionally includes `approved_status`, a column that reveals the final approval outcome.
 
 The agent detects the leakage and returns:
 
+```text
 Leakage Risks: 2
 Decision: BLOCK_DOWNSTREAM_TRAINING
 Suspicious column: approved_status
+```
 
 This demonstrates that FinData Verifier Agent is not only a data checker. It acts as a safety gate before higher-risk financial AI workflows begin.
 
