@@ -1,229 +1,74 @@
 {
-  "dataset_name": "Credit Card Fraud Detection",
+  "dataset_name": "Loan Approval Leakage Demo",
   "analysis": {
     "profile": {
-      "rows": 284807,
-      "columns": 31,
+      "rows": 20,
+      "columns": 6,
       "dtypes": {
-        "Time": "float64",
-        "V1": "float64",
-        "V2": "float64",
-        "V3": "float64",
-        "V4": "float64",
-        "V5": "float64",
-        "V6": "float64",
-        "V7": "float64",
-        "V8": "float64",
-        "V9": "float64",
-        "V10": "float64",
-        "V11": "float64",
-        "V12": "float64",
-        "V13": "float64",
-        "V14": "float64",
-        "V15": "float64",
-        "V16": "float64",
-        "V17": "float64",
-        "V18": "float64",
-        "V19": "float64",
-        "V20": "float64",
-        "V21": "float64",
-        "V22": "float64",
-        "V23": "float64",
-        "V24": "float64",
-        "V25": "float64",
-        "V26": "float64",
-        "V27": "float64",
-        "V28": "float64",
-        "Amount": "float64",
+        "income": "int64",
+        "age": "int64",
+        "credit_score": "int64",
+        "loan_amount": "int64",
+        "approved_status": "int64",
         "Class": "int64"
       },
       "numeric_columns": [
-        "Time",
-        "V1",
-        "V2",
-        "V3",
-        "V4",
-        "V5",
-        "V6",
-        "V7",
-        "V8",
-        "V9",
-        "V10",
-        "V11",
-        "V12",
-        "V13",
-        "V14",
-        "V15",
-        "V16",
-        "V17",
-        "V18",
-        "V19",
-        "V20",
-        "V21",
-        "V22",
-        "V23",
-        "V24",
-        "V25",
-        "V26",
-        "V27",
-        "V28",
-        "Amount",
+        "income",
+        "age",
+        "credit_score",
+        "loan_amount",
+        "approved_status",
         "Class"
       ],
       "categorical_columns": [],
       "missing_values_ratio": {},
-      "duplicate_rows": 1081,
-      "duplicate_ratio": 0.0038
+      "duplicate_rows": 0,
+      "duplicate_ratio": 0.0
     },
-    "outliers": {
-      "V1": {
-        "outlier_count": 7062,
-        "outlier_ratio": 0.0248
-      },
-      "V2": {
-        "outlier_count": 13526,
-        "outlier_ratio": 0.0475
-      },
-      "V3": {
-        "outlier_count": 3363,
-        "outlier_ratio": 0.0118
-      },
-      "V4": {
-        "outlier_count": 11148,
-        "outlier_ratio": 0.0391
-      },
-      "V5": {
-        "outlier_count": 12295,
-        "outlier_ratio": 0.0432
-      },
-      "V6": {
-        "outlier_count": 22965,
-        "outlier_ratio": 0.0806
-      },
-      "V7": {
-        "outlier_count": 8948,
-        "outlier_ratio": 0.0314
-      },
-      "V8": {
-        "outlier_count": 24134,
-        "outlier_ratio": 0.0847
-      },
-      "V9": {
-        "outlier_count": 8283,
-        "outlier_ratio": 0.0291
-      },
-      "V10": {
-        "outlier_count": 9496,
-        "outlier_ratio": 0.0333
-      },
-      "V11": {
-        "outlier_count": 780,
-        "outlier_ratio": 0.0027
-      },
-      "V12": {
-        "outlier_count": 15348,
-        "outlier_ratio": 0.0539
-      },
-      "V13": {
-        "outlier_count": 3368,
-        "outlier_ratio": 0.0118
-      },
-      "V14": {
-        "outlier_count": 14149,
-        "outlier_ratio": 0.0497
-      },
-      "V15": {
-        "outlier_count": 2894,
-        "outlier_ratio": 0.0102
-      },
-      "V16": {
-        "outlier_count": 8184,
-        "outlier_ratio": 0.0287
-      },
-      "V17": {
-        "outlier_count": 7420,
-        "outlier_ratio": 0.0261
-      },
-      "V18": {
-        "outlier_count": 7533,
-        "outlier_ratio": 0.0264
-      },
-      "V19": {
-        "outlier_count": 10205,
-        "outlier_ratio": 0.0358
-      },
-      "V20": {
-        "outlier_count": 27770,
-        "outlier_ratio": 0.0975
-      },
-      "V21": {
-        "outlier_count": 14497,
-        "outlier_ratio": 0.0509
-      },
-      "V22": {
-        "outlier_count": 1317,
-        "outlier_ratio": 0.0046
-      },
-      "V23": {
-        "outlier_count": 18541,
-        "outlier_ratio": 0.0651
-      },
-      "V24": {
-        "outlier_count": 4774,
-        "outlier_ratio": 0.0168
-      },
-      "V25": {
-        "outlier_count": 5367,
-        "outlier_ratio": 0.0188
-      },
-      "V26": {
-        "outlier_count": 5596,
-        "outlier_ratio": 0.0196
-      },
-      "V27": {
-        "outlier_count": 39163,
-        "outlier_ratio": 0.1375
-      },
-      "V28": {
-        "outlier_count": 30342,
-        "outlier_ratio": 0.1065
-      },
-      "Amount": {
-        "outlier_count": 31904,
-        "outlier_ratio": 0.112
-      }
-    },
+    "outliers": {},
     "class_imbalance": {
       "target_column": "Class",
       "class_counts": {
-        "0": 284315,
-        "1": 492
+        "0": 10,
+        "1": 10
       },
       "class_ratios": {
-        "0": 0.9983,
-        "1": 0.0017
+        "0": 0.5,
+        "1": 0.5
       },
-      "minority_class_ratio": 0.0017,
-      "is_imbalanced": true
+      "minority_class_ratio": 0.5,
+      "is_imbalanced": false
     }
   },
   "leakage": {
     "target_column": "Class",
-    "leakage_risks": [],
-    "risk_count": 0
+    "leakage_risks": [
+      {
+        "column": "approved_status",
+        "risk_type": "suspicious_column_name",
+        "reason": "Column name may reveal outcome-related information."
+      },
+      {
+        "column": "approved_status",
+        "risk_type": "very_high_correlation_with_target",
+        "correlation": 1.0,
+        "reason": "Feature is almost perfectly correlated with target."
+      }
+    ],
+    "risk_count": 2
   },
   "score": {
-    "trust_score": 75,
-    "trust_grade": "Medium Trust",
+    "trust_score": 49,
+    "trust_grade": "High Risk",
     "penalties": [
-      "Outlier-heavy columns: -15",
-      "Class imbalance: -10"
+      "Possible target leakage: -16",
+      "Safety gate: target leakage caps trust score at 49"
     ]
   },
   "proof": {
-    "dataset_fingerprint": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
-    "report_hash": "44c9c6c95bbb35730963d869c6877b85ca4ec5ff1daa8301d50cfbbf91e71f27",
-    "execution_timestamp": "2026-06-18T22:33:38.710897Z",
+    "dataset_fingerprint": "b84d3de00031c3b804530c954e4a7a02e7e7ed1dd5d57c3aa7bbe9855091daf0",
+    "report_hash": "0f3fb6f7384421934c0af5688f52066781d78624b2ac6059a5a1b96a1c3d8ab5",
+    "execution_timestamp": "2026-06-21T17:10:14.875942Z",
     "proof_type": "SHA256 dataset fingerprint + report hash"
   }
 }

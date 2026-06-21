@@ -171,18 +171,14 @@ if uploaded_file:
         findings_col1, findings_col2 = st.columns([1, 1])
 
         with findings_col1:
-            st.markdown('<div class="risk-box">', unsafe_allow_html=True)
-            st.markdown("**Main reasons**")
+            st.warning("**Main reasons**")
             for reason in readiness["main_reasons"]:
                 st.markdown(f"- {reason}")
-            st.markdown("</div>", unsafe_allow_html=True)
 
         with findings_col2:
-            st.markdown('<div class="risk-box">', unsafe_allow_html=True)
-            st.markdown("**Recommended next steps**")
+            st.info("**Recommended next steps**")
             for step in readiness["recommended_next_steps"]:
                 st.markdown(f"- {step}")
-            st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("### Dataset Risk Breakdown")
 

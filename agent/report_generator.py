@@ -8,66 +8,102 @@ def generate_markdown_report(
     score: dict,
     proof: dict
 ) -> str:
-    profile = analysis["profile"]
-    imbalance = analysis["class_imbalance"]
+    profile = analysis.get("profile", {})
+    imbalance = analysis.get("class_imbalance", {})
 
-    report = f"""
-# FinData Verifier Agent Report
+    missing_values = profile.get("missing_values_ratio", {})
+    penalties = score.get("penalties", [])
+    leakage_risks = leakage.get("leakage_risks", [])
+    leakage_count = leakage.get("risk_count", 0)
 
-## Dataset
-**Name:** {dataset_name}  
-**Generated at:** {datetime.utcnow().isoformat()} UTC
-
-## Dataset Overview
-- Rows: {profile["rows"]}
-- Columns: {profile["columns"]}
-- Duplicate rows: {profile["duplicate_rows"]}
-- Duplicate ratio: {profile["duplicate_ratio"]}
-
-## Trust Score
-**Score:** {score["trust_score"]}/100  
-**Grade:** {score["trust_grade"]}
-
-## Key Risks
-"""
-
-    if score["penalties"]:
-        for p in score["penalties"]:
-            report += f"- {p}\n"
+    if leakage_count > 0:
+        recommendation = (
+            "**BLOCKED — Target leakage detected.** Do not use this dataset "
+            "for downstream model training. Remove or independently validate "
+            "leakage-related columns, then rerun verification."
+        )
     else:
-        report += "- No major risk detected.\n"
+        recommendation = (
+            "This dataset can be used for experimentation if the listed risks are addressed. "
+            "For production or financial decision-making, further validation is recommended."
+        )
 
-    report += "\n## Missing Values\n"
-    if profile["missing_values_ratio"]:
-        for col, ratio in profile["missing_values_ratio"].items():
-            report += f"- {col}: {ratio * 100:.2f}%\n"
+    lines = [
+        "# FinData Verifier Agent Report",
+        "",
+        "## Dataset",
+        f"**Name:** {dataset_name}",
+        f"**Generated at:** {datetime.utcnow().isoformat()} UTC",
+        "",
+        "## Dataset Overview",
+        f"- Rows: {profile.get('rows', 'Unknown')}",
+        f"- Columns: {profile.get('columns', 'Unknown')}",
+        f"- Duplicate rows: {profile.get('duplicate_rows', 0)}",
+        f"- Duplicate ratio: {profile.get('duplicate_ratio', 0)}",
+        "",
+        "## Trust Score",
+        f"**Score:** {score.get('trust_score', 0)}/100",
+        f"**Grade:** {score.get('trust_grade', 'Unknown')}",
+        "",
+        "## Key Risks",
+    ]
+
+    if penalties:
+        for penalty in penalties:
+            lines.append(f"- {penalty}")
     else:
-        report += "- No missing values detected.\n"
+        lines.append("- No major penalties detected.")
 
-    report += "\n## Class Imbalance\n"
+    lines.extend([
+        "",
+        "## Missing Values",
+    ])
+
+    if missing_values:
+        for col, ratio in missing_values.items():
+            lines.append(f"- {col}: {ratio * 100:.2f}%")
+    else:
+        lines.append("- No missing values detected.")
+
+    lines.extend([
+        "",
+        "## Class Imbalance",
+    ])
+
     if imbalance.get("status") == "no_target_column_provided":
-        report += "- No target column provided.\n"
+        lines.append("- No target column provided.")
     else:
-        report += f"- Target column: {imbalance['target_column']}\n"
-        report += f"- Minority class ratio: {imbalance['minority_class_ratio']}\n"
-        report += f"- Is imbalanced: {imbalance['is_imbalanced']}\n"
+        lines.extend([
+            f"- Target column: {imbalance.get('target_column', 'Unknown')}",
+            f"- Minority class ratio: {imbalance.get('minority_class_ratio', 'Unknown')}",
+            f"- Is imbalanced: {imbalance.get('is_imbalanced', False)}",
+        ])
 
-    report += "\n## Possible Target Leakage\n"
-    if leakage.get("risk_count", 0) == 0:
-        report += "- No obvious leakage risk detected.\n"
+    lines.extend([
+        "",
+        "## Possible Target Leakage",
+    ])
+
+    if leakage_count == 0:
+        lines.append("- No obvious leakage risk detected.")
     else:
-        for item in leakage["leakage_risks"]:
-            report += f"- {item['column']}: {item['risk_type']} — {item['reason']}\n"
+        for item in leakage_risks:
+            lines.append(
+                f"- {item.get('column', 'Unknown')}: "
+                f"{item.get('risk_type', 'risk')} — "
+                f"{item.get('reason', 'No reason provided.')}"
+            )
 
-    report += f"""
-## Verification Proof
-- Dataset fingerprint: `{proof["dataset_fingerprint"]}`
-- Report hash: `{proof["report_hash"]}`
-- Execution timestamp: `{proof["execution_timestamp"]}`
+    lines.extend([
+        "",
+        "## Verification Proof",
+        f"- Dataset fingerprint: `{proof.get('dataset_fingerprint', 'pending')}`",
+        f"- Report hash: `{proof.get('report_hash', 'pending')}`",
+        f"- Execution timestamp: `{proof.get('execution_timestamp', 'pending')}`",
+        "",
+        "## Recommendation",
+        recommendation,
+        "",
+    ])
 
-## Recommendation
-This dataset can be used for experimentation if the listed risks are addressed. 
-For production or financial decision-making, further validation is recommended.
-"""
-
-    return report
+    return "\n".join(lines)
