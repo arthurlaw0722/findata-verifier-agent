@@ -98,7 +98,7 @@ def generate_markdown_report(
         "",
         "## Verification Proof",
         f"- Dataset fingerprint: `{proof.get('dataset_fingerprint', 'pending')}`",
-        f"- Report hash: `{proof.get('report_hash', 'pending')}`",
+        f"- Canonical report hash: `{proof.get('report_hash', 'pending')}`",
         f"- Execution timestamp: `{proof.get('execution_timestamp', 'pending')}`",
         "",
         "## Recommendation",

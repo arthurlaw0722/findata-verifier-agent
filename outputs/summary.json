@@ -67,8 +67,9 @@
   },
   "proof": {
     "dataset_fingerprint": "b84d3de00031c3b804530c954e4a7a02e7e7ed1dd5d57c3aa7bbe9855091daf0",
-    "report_hash": "0f3fb6f7384421934c0af5688f52066781d78624b2ac6059a5a1b96a1c3d8ab5",
-    "execution_timestamp": "2026-06-21T17:10:14.875942Z",
-    "proof_type": "SHA256 dataset fingerprint + report hash"
+    "report_hash": "70f941d6ff3284f70cb5069c45bc54a8f2d40250ae1f5c9748798ba7aa637484",
+    "execution_timestamp": "2026-06-21T22:31:12.842426Z",
+    "proof_type": "SHA256 dataset fingerprint + canonical report body hash",
+    "canonicalization": "Generated timestamp and proof metadata are normalized before the report hash is calculated."
   }
 }

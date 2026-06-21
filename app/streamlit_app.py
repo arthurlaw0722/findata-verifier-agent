@@ -212,7 +212,7 @@ if uploaded_file:
         st.markdown("### Verification Proof")
 
         st.code(f"Dataset fingerprint: {proof['dataset_fingerprint']}")
-        st.code(f"Report hash: {proof['report_hash']}")
+        st.code(f"Canonical report hash: {proof['report_hash']}")
         st.code(f"Execution timestamp: {proof['execution_timestamp']}")
 
         with st.expander("View full markdown report"):
