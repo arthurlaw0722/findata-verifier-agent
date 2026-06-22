@@ -224,6 +224,19 @@ CROO_SDK_KEY=your_croo_sdk_key
 
 For safety, these should be stored in a local `.env` file. The `.env` file should never be committed to GitHub.
 
+
+## CROO SDK Methods Used
+
+The provider uses the CROO Python SDK to:
+
+- `AgentClient(...)` creates the provider client with CROO API, WebSocket, and SDK credentials.
+- `connect_websocket()` opens the provider connection.
+- `accept_negotiation(...)` accepts a new verification job.
+- `get_order(...)` retrieves the paid order requirements.
+- `deliver_order(...)` sends the verification result back to CROO.
+- `EventType.NEGOTIATION_CREATED` and `EventType.ORDER_PAID` handle the negotiation and paid-order workflow.
+
+
 ---
 
 ## Streamlit Demo
