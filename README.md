@@ -180,6 +180,8 @@ Suspicious column: approved_status
 
 This demonstrates that FinData Verifier Agent is not only a data checker. It acts as a safety gate before higher-risk financial AI workflows begin.
 
+---
+
 ## Production Readiness Layer
 
 The agent translates technical data risks into business-friendly readiness guidance.
@@ -224,6 +226,7 @@ CROO_SDK_KEY=your_croo_sdk_key
 
 For safety, these should be stored in a local `.env` file. The `.env` file should never be committed to GitHub.
 
+---
 
 ## CROO SDK Methods Used
 
