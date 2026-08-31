@@ -24,3 +24,4 @@ outputs/*.zip
 
 # Mac files
 .DS_Store
+.venv-cloud-test/
