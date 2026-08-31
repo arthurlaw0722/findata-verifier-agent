@@ -88,6 +88,46 @@ with left_col:
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
     target_column = st.text_input("Target column", value="", placeholder="e.g. Class")
     dataset_name = st.text_input("Dataset name", value="Credit Card Fraud Detection")
+    st.markdown(
+        """
+        <style>
+        .st-key-run_verification button {
+            min-height: 3rem;
+            font-weight: 700;
+            border-radius: 0.6rem;
+            transition: all 0.15s ease;
+        }
+
+        .st-key-run_verification button:not(:disabled) {
+            background-color: #D62828 !important;
+            border-color: #D62828 !important;
+            color: white !important;
+        }
+
+        .st-key-run_verification button:not(:disabled):hover {
+            background-color: #B71C1C !important;
+            border-color: #B71C1C !important;
+            color: white !important;
+        }
+
+        .st-key-run_verification button:disabled {
+            background-color: #FDECEC !important;
+            border: 1px solid #DFA3A3 !important;
+            color: #A63A3A !important;
+            opacity: 1 !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    run_button = st.button(
+        "Run Verification",
+        type="primary",
+        disabled=uploaded_file is None,
+        use_container_width=True,
+        key="run_verification",
+    )
 
 with right_col:
     st.subheader("What this agent checks")
@@ -120,8 +160,6 @@ if uploaded_file:
     preview_col1.metric("Rows", f"{df.shape[0]:,}")
     preview_col2.metric("Columns", f"{df.shape[1]:,}")
     preview_col3.metric("Target Column", target_column if target_column else "Not provided")
-
-    run_button = st.button("Run Verification", type="primary")
 
     if run_button:
         with st.spinner("Running dataset verification..."):
