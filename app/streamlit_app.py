@@ -13,6 +13,11 @@ from agent.scoring import calculate_trust_score
 from agent.report_generator import generate_markdown_report
 from agent.proof import create_proof
 from agent.readiness import assess_readiness
+from analytics.profiler import profile_dataset
+from analytics.statistics import (
+    numeric_statistics,
+    categorical_statistics,
+)
 
 
 st.set_page_config(
@@ -152,7 +157,59 @@ if uploaded_file:
 
     df = pd.read_csv(csv_path)
 
+    dataset_profile = profile_dataset(df)
+
     st.divider()
+    st.subheader("Dataset Overview")
+
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+
+    overview_col1.metric("Rows", f"{dataset_profile['rows']:,}")
+    overview_col2.metric("Columns", f"{dataset_profile['columns']:,}")
+    overview_col3.metric("Numeric", dataset_profile["numeric_columns"])
+    overview_col4.metric("Categorical", dataset_profile["categorical_columns"])
+
+    overview_col5, overview_col6, overview_col7, overview_col8 = st.columns(4)
+
+    overview_col5.metric("Missing Cells", f"{dataset_profile['missing_cells']:,}")
+    overview_col6.metric("Missing %", f"{dataset_profile['missing_ratio'] * 100:.2f}%")
+    overview_col7.metric("Duplicate Rows", f"{dataset_profile['duplicate_rows']:,}")
+    overview_col8.metric("Memory", f"{dataset_profile['memory_mb']:.2f} MB")
+
+
+    st.divider()
+    st.divider()
+    st.subheader("Data Explorer")
+    st.caption(
+        "Explore descriptive statistics before moving to visual analysis "
+        "and machine learning."
+    )
+
+    numeric_stats = numeric_statistics(df)
+    categorical_stats = categorical_statistics(df)
+
+    numeric_tab, categorical_tab = st.tabs(
+        ["Numeric Statistics", "Categorical Statistics"]
+    )
+
+    with numeric_tab:
+        if numeric_stats.empty:
+            st.info("No numeric columns found.")
+        else:
+            st.dataframe(
+                numeric_stats.round(4),
+                use_container_width=True,
+            )
+
+    with categorical_tab:
+        if categorical_stats.empty:
+            st.info("No categorical columns found.")
+        else:
+            st.dataframe(
+                categorical_stats,
+                use_container_width=True,
+            )
+
     st.subheader("Dataset Preview")
     st.dataframe(df.head(), use_container_width=True)
 
