@@ -18,6 +18,13 @@ from analytics.statistics import (
     numeric_statistics,
     categorical_statistics,
 )
+from analytics.visualizations import (
+    histogram_chart,
+    box_chart,
+    scatter_chart,
+    correlation_heatmap,
+    missing_values_chart,
+)
 
 
 st.set_page_config(
@@ -188,8 +195,12 @@ if uploaded_file:
     numeric_stats = numeric_statistics(df)
     categorical_stats = categorical_statistics(df)
 
-    numeric_tab, categorical_tab = st.tabs(
-        ["Numeric Statistics", "Categorical Statistics"]
+    numeric_tab, categorical_tab, visual_tab = st.tabs(
+        [
+            "Numeric Statistics",
+            "Categorical Statistics",
+            "Visual Analysis",
+        ]
     )
 
     with numeric_tab:
@@ -209,6 +220,147 @@ if uploaded_file:
                 categorical_stats,
                 use_container_width=True,
             )
+
+    with visual_tab:
+        numeric_columns = dataset_profile["numeric_column_names"]
+
+        group_columns = (
+            dataset_profile["categorical_column_names"]
+            + dataset_profile["low_cardinality_numeric_column_names"]
+        )
+
+        chart_type = st.selectbox(
+            "Chart type",
+            [
+                "Histogram",
+                "Box Plot",
+                "Scatter Plot",
+                "Correlation Heatmap",
+                "Missing Values",
+            ],
+            key="visual_chart_type",
+        )
+
+        if chart_type == "Histogram":
+            column = st.selectbox(
+                "Column",
+                numeric_columns,
+                key="histogram_column",
+            )
+
+            group = st.selectbox(
+                "Group / colour",
+                ["None"] + group_columns,
+                key="histogram_group",
+            )
+
+            figure = histogram_chart(
+                df,
+                column,
+                None if group == "None" else group,
+            )
+
+            st.plotly_chart(
+                figure,
+                use_container_width=True,
+            )
+
+        elif chart_type == "Box Plot":
+            column = st.selectbox(
+                "Column",
+                numeric_columns,
+                key="box_column",
+            )
+
+            group = st.selectbox(
+                "Group by",
+                ["None"] + group_columns,
+                key="box_group",
+            )
+
+            figure = box_chart(
+                df,
+                column,
+                None if group == "None" else group,
+            )
+
+            st.plotly_chart(
+                figure,
+                use_container_width=True,
+            )
+
+        elif chart_type == "Scatter Plot":
+            selector_col1, selector_col2 = st.columns(2)
+
+            with selector_col1:
+                x_column = st.selectbox(
+                    "X-axis",
+                    numeric_columns,
+                    key="scatter_x",
+                )
+
+            with selector_col2:
+                default_y_index = (
+                    1 if len(numeric_columns) > 1 else 0
+                )
+
+                y_column = st.selectbox(
+                    "Y-axis",
+                    numeric_columns,
+                    index=default_y_index,
+                    key="scatter_y",
+                )
+
+            group = st.selectbox(
+                "Group / colour",
+                ["None"] + group_columns,
+                key="scatter_group",
+            )
+
+            figure = scatter_chart(
+                df,
+                x_column,
+                y_column,
+                None if group == "None" else group,
+            )
+
+            st.caption(
+                "Large datasets are sampled to a maximum of "
+                "30,000 points for responsive visualisation. "
+                "Statistical calculations still use the full dataset."
+            )
+
+            st.plotly_chart(
+                figure,
+                use_container_width=True,
+            )
+
+        elif chart_type == "Correlation Heatmap":
+            figure = correlation_heatmap(df)
+
+            if figure is None:
+                st.info(
+                    "No numeric columns are available "
+                    "for correlation analysis."
+                )
+            else:
+                st.plotly_chart(
+                    figure,
+                    use_container_width=True,
+                )
+
+        elif chart_type == "Missing Values":
+            figure = missing_values_chart(df)
+
+            if figure is None:
+                st.success(
+                    "No missing values were found in this dataset."
+                )
+            else:
+                st.plotly_chart(
+                    figure,
+                    use_container_width=True,
+                )
 
     st.subheader("Dataset Preview")
     st.dataframe(df.head(), use_container_width=True)
