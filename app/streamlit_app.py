@@ -14,6 +14,7 @@ from agent.report_generator import generate_markdown_report
 from agent.proof import create_proof
 from agent.readiness import assess_readiness
 from analytics.profiler import profile_dataset
+from analytics.target_analysis import analyze_target
 from analytics.statistics import (
     numeric_statistics,
     categorical_statistics,
@@ -185,6 +186,92 @@ if uploaded_file:
 
 
     st.divider()
+    if target_column and target_column in df.columns:
+        target_summary = analyze_target(
+            df,
+            target_column,
+        )
+
+        st.divider()
+        st.subheader("Target Analysis")
+        st.caption(
+            "Understand the prediction target, class balance, "
+            "and strongest numeric associations."
+        )
+
+        target_col1, target_col2, target_col3, target_col4 = st.columns(4)
+
+        target_col1.metric(
+            "Target",
+            target_summary["target_column"],
+        )
+
+        target_col2.metric(
+            "Task",
+            target_summary["task_type"],
+        )
+
+        target_col3.metric(
+            "Unique Values",
+            target_summary["unique_values"],
+        )
+
+        target_col4.metric(
+            "Missing %",
+            f'{target_summary["missing_pct"]:.2f}%',
+        )
+
+        if "Classification" in target_summary["task_type"]:
+            class_col1, class_col2, class_col3 = st.columns(3)
+
+            class_col1.metric(
+                "Majority Class",
+                target_summary["majority_class"],
+                help=f'{target_summary["majority_count"]:,} rows',
+            )
+
+            class_col2.metric(
+                "Minority Class",
+                target_summary["minority_class"],
+                help=f'{target_summary["minority_count"]:,} rows',
+            )
+
+            imbalance_value = target_summary["imbalance_ratio"]
+
+            class_col3.metric(
+                "Imbalance Ratio",
+                (
+                    f"{imbalance_value:.2f}:1"
+                    if imbalance_value is not None
+                    else "N/A"
+                ),
+            )
+
+            st.markdown("#### Class Distribution")
+
+            class_distribution_df = pd.DataFrame(
+                target_summary["class_distribution"]
+            )
+
+            st.dataframe(
+                class_distribution_df,
+                use_container_width=True,
+                hide_index=True,
+            )
+
+        associations = target_summary["top_numeric_associations"]
+
+        if associations:
+            st.markdown("#### Top Numeric Associations")
+
+            association_df = pd.DataFrame(associations)
+
+            st.dataframe(
+                association_df,
+                use_container_width=True,
+                hide_index=True,
+            )
+
     st.divider()
     st.subheader("Data Explorer")
     st.caption(
