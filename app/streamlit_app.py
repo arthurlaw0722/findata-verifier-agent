@@ -99,7 +99,34 @@ left_col, right_col = st.columns([1.1, 1])
 with left_col:
     st.subheader("Upload dataset")
     uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
-    target_column = st.text_input("Target column", value="", placeholder="e.g. Class")
+    if uploaded_file is None:
+        target_column = ""
+        st.selectbox(
+            "Target column",
+            ["Upload a CSV first"],
+            disabled=True,
+            key="target_column_disabled",
+        )
+    else:
+        uploaded_file.seek(0)
+        available_columns = pd.read_csv(
+            uploaded_file,
+            nrows=0,
+        ).columns.tolist()
+        uploaded_file.seek(0)
+
+        target_column = st.selectbox(
+            "Target column",
+            options=[""] + available_columns,
+            index=0,
+            format_func=lambda value: (
+                "None / No target"
+                if value == ""
+                else value
+            ),
+            help="Select the column you want to predict or analyse.",
+            key="target_column_selector",
+        )
     dataset_name = st.text_input("Dataset name", value="Credit Card Fraud Detection")
     st.markdown(
         """
