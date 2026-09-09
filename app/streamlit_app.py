@@ -309,7 +309,7 @@ def render_target_analysis(df, target_column):
                 target_summary["class_distribution"]
             )
             st.dataframe(
-                class_distribution_df,
+                class_distribution_df.rename(columns={"class": "Class", "count": "Count", "percentage": "Percentage (%)"}),
                 use_container_width=True,
                 hide_index=True,
             )
@@ -320,7 +320,7 @@ def render_target_analysis(df, target_column):
             if associations:
                 association_df = pd.DataFrame(associations)
                 st.dataframe(
-                    association_df,
+                    association_df.rename(columns={"feature": "Feature", "correlation": "Correlation", "absolute_correlation": "Strength"}),
                     use_container_width=True,
                     hide_index=True,
                 )
@@ -332,7 +332,7 @@ def render_target_analysis(df, target_column):
         if associations:
             association_df = pd.DataFrame(associations)
             st.dataframe(
-                association_df,
+                association_df.rename(columns={"feature": "Feature", "correlation": "Correlation", "absolute_correlation": "Strength"}),
                 use_container_width=True,
                 hide_index=True,
             )
