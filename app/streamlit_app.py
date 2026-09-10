@@ -6,6 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 from agent.analyzer import analyse_dataset
 from agent.leakage import detect_possible_leakage
@@ -15,6 +16,7 @@ from agent.proof import create_proof
 from agent.readiness import assess_readiness
 from analytics.profiler import profile_dataset
 from analytics.target_analysis import analyze_target
+from analytics.ml_pipeline import train_binary_models, model_comparison_table
 from analytics.statistics import (
     numeric_statistics,
     categorical_statistics,
@@ -562,7 +564,17 @@ def render_verification_result(result):
     final_report = result["final_report"]
     dataset_name = result["dataset_name"]
 
-    st.success("Verification completed")
+    leakage_count = leakage.get("risk_count", 0)
+
+    if leakage_count == 0:
+        st.success(
+            "Verification passed — no target leakage risks were detected."
+        )
+    else:
+        st.error(
+            f"Verification completed — {leakage_count} possible target "
+            "leakage risk(s) detected. Machine Learning is blocked."
+        )
 
     metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
     metric_col1.metric("Trust Score", f"{score['trust_score']}/100")
@@ -739,6 +751,9 @@ def render_verification(
                 expanded=False,
             )
 
+            # Refresh the page so the Machine Learning lock updates immediately.
+            st.rerun()
+
     result = st.session_state.get("verification_result")
 
     if (
@@ -767,11 +782,366 @@ def render_getting_started():
         1. Upload a CSV dataset.
         2. Select a target column if you are doing supervised analysis.
         3. Review **Overview**, **Explore**, and **Target Analysis**.
-        4. Open **Verification** and run the trust and leakage checks.
-        5. Review the **SHA256 Proof & Report** tab and download the report.
+        4. Open **Verification** and run the trust, leakage, and readiness checks.
+        5. If verification passes, open **Machine Learning** to benchmark models.
+        6. Review the **SHA256 Proof & Report** tab and download the verification report.
         """
     )
 
+
+
+def render_machine_learning(uploaded_file, df, target_column, dataset_name):
+    """Render the portfolio machine-learning benchmark workspace."""
+
+    st.subheader("Machine Learning")
+    st.caption(
+        "Train and compare baseline classification models only after "
+        "the dataset passes the leakage safety gate."
+    )
+
+    if not target_column or target_column not in df.columns:
+        st.info(
+            "Select a binary target column in Dataset configuration "
+            "before running the machine-learning benchmark."
+        )
+        return
+
+    current_verification_signature = (
+        uploaded_file_signature(uploaded_file),
+        target_column,
+        dataset_name,
+    )
+
+    verification_result = st.session_state.get("verification_result")
+    verification_signature = st.session_state.get("verification_signature")
+
+    if (
+        verification_result is None
+        or verification_signature != current_verification_signature
+    ):
+        st.warning(
+            "**Verification required**\n\n"
+            "Run Verification to unlock Machine Learning for this dataset and target. "
+            "Access is granted only if no target leakage is detected."
+        )
+        return
+
+    verification_leakage = verification_result.get("leakage", {})
+    verification_leakage_count = verification_leakage.get("risk_count", 0)
+
+    if verification_leakage_count > 0:
+        st.error(
+            "Machine Learning is blocked because Verification detected "
+            "possible target leakage."
+        )
+        st.caption(
+            "Review Risks & Readiness in Verification, remove or validate "
+            "the leakage-related features, then rerun Verification."
+        )
+        return
+
+    target_values = df[target_column].dropna()
+
+    if target_values.nunique() != 2:
+        st.warning(
+            "The current ML benchmark supports binary classification only. "
+            f"The selected target contains {target_values.nunique()} unique values."
+        )
+        return
+
+    class_counts = target_values.value_counts()
+    minority_pct = (
+        class_counts.min() / class_counts.sum() * 100
+        if class_counts.sum()
+        else 0
+    )
+
+    overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+
+    overview_col1.metric(
+        "Dataset Rows",
+        f"{len(df):,}",
+    )
+    overview_col2.metric(
+        "Features",
+        f"{max(len(df.columns) - 1, 0):,}",
+    )
+    overview_col3.metric(
+        "Target",
+        target_column,
+    )
+    overview_col4.metric(
+        "Minority Class",
+        f"{minority_pct:.3f}%",
+    )
+
+    st.divider()
+
+    st.markdown("### Verification Gate")
+
+    st.success(
+        "Passed — this exact dataset and target were verified, "
+        "and no target leakage risks were detected."
+    )
+
+    gate_col1, gate_col2 = st.columns(2)
+    gate_col1.metric("Verification Status", "Passed")
+    gate_col2.metric("Leakage Risks", verification_leakage_count)
+
+    if minority_pct < 10:
+        st.info(
+            "This is an imbalanced classification problem. "
+            "Model recommendation therefore prioritises PR-AUC rather "
+            "than accuracy alone."
+        )
+
+    st.divider()
+
+    st.markdown("### Model Benchmark")
+
+    current_signature = (
+        f"{target_column}|{len(df)}|{len(df.columns)}"
+    )
+
+    if st.session_state.get("ml_signature") != current_signature:
+        st.session_state.pop("ml_result", None)
+        st.session_state["ml_signature"] = current_signature
+
+    run_ml = st.button(
+        "Run ML Benchmark",
+        type="primary",
+        use_container_width=True,
+        key="run_ml_benchmark",
+    )
+
+    if run_ml:
+        with st.spinner(
+            "Training Logistic Regression and Random Forest..."
+        ):
+            result = train_binary_models(
+                df,
+                target_column=target_column,
+            )
+
+        st.session_state["ml_result"] = result
+
+    result = st.session_state.get("ml_result")
+
+    if result is None:
+        st.caption(
+            "Run the benchmark to compare Logistic Regression and "
+            "Random Forest on a stratified train/test split."
+        )
+        return
+
+    if result.get("status") != "completed":
+        validation = result.get("validation", {})
+        reason = validation.get(
+            "reason",
+            "The machine-learning benchmark could not be completed.",
+        )
+        st.error(reason)
+        return
+
+    models = result.get("models", {})
+
+    if not models:
+        st.warning("No model results were returned.")
+        return
+
+    # PR-AUC is particularly informative for highly imbalanced problems.
+    recommended_model = max(
+        models,
+        key=lambda name: models[name].get("pr_auc", -1),
+    )
+    recommended_metrics = models[recommended_model]
+
+    st.success("Machine-learning benchmark completed.")
+
+    recommendation_col1, recommendation_col2, recommendation_col3 = st.columns(
+        [1.5, 1, 1]
+    )
+
+    recommendation_col1.metric(
+        "Top Benchmark Model",
+        recommended_model,
+    )
+    recommendation_col2.metric(
+        "PR-AUC",
+        f"{recommended_metrics.get('pr_auc', 0):.4f}",
+    )
+    recommendation_col3.metric(
+        "F1 Score",
+        f"{recommended_metrics.get('f1', 0):.4f}",
+    )
+
+    st.caption(
+        "Benchmark ranking is based on PR-AUC, which is more informative "
+        "than raw accuracy when the positive class is rare."
+    )
+
+    st.markdown("#### Model Comparison")
+
+    comparison_df = model_comparison_table(result).copy()
+
+    rename_map = {
+        "Model": "Model",
+        "Accuracy": "Accuracy",
+        "Precision": "Precision",
+        "Recall": "Recall",
+        "F1": "F1",
+        "ROC-AUC": "ROC-AUC",
+        "PR-AUC": "PR-AUC",
+    }
+
+    comparison_df = comparison_df.rename(columns=rename_map)
+
+    st.dataframe(
+        comparison_df.round(4),
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("#### Model Performance Curves")
+    st.caption(
+        "Precision–Recall is the primary comparison for this highly "
+        "imbalanced classification problem. ROC is shown as a complementary view."
+    )
+
+    pr_figure = go.Figure()
+    roc_figure = go.Figure()
+
+    for model_name, metrics in models.items():
+        pr_data = metrics.get("pr_curve", {})
+        roc_data = metrics.get("roc_curve", {})
+
+        recall_values = pr_data.get("recall", [])
+        precision_values = pr_data.get("precision", [])
+
+        if recall_values and precision_values:
+            pr_figure.add_trace(
+                go.Scatter(
+                    x=recall_values,
+                    y=precision_values,
+                    mode="lines",
+                    name=model_name,
+                )
+            )
+
+        fpr_values = roc_data.get("fpr", [])
+        tpr_values = roc_data.get("tpr", [])
+
+        if fpr_values and tpr_values:
+            roc_figure.add_trace(
+                go.Scatter(
+                    x=fpr_values,
+                    y=tpr_values,
+                    mode="lines",
+                    name=model_name,
+                )
+            )
+
+    pr_figure.update_layout(
+        title="Precision–Recall Curve",
+        xaxis_title="Recall",
+        yaxis_title="Precision",
+        xaxis_range=[0, 1],
+        yaxis_range=[0, 1],
+        legend_title_text="Model",
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+
+    roc_figure.add_trace(
+        go.Scatter(
+            x=[0, 1],
+            y=[0, 1],
+            mode="lines",
+            name="Random baseline",
+            line=dict(dash="dash"),
+        )
+    )
+
+    roc_figure.update_layout(
+        title="ROC Curve",
+        xaxis_title="False Positive Rate",
+        yaxis_title="True Positive Rate",
+        xaxis_range=[0, 1],
+        yaxis_range=[0, 1],
+        legend_title_text="Model",
+        margin=dict(l=20, r=20, t=60, b=20),
+    )
+
+    curve_col1, curve_col2 = st.columns(2)
+
+    with curve_col1:
+        st.plotly_chart(
+            pr_figure,
+            use_container_width=True,
+            key="ml_precision_recall_curve",
+        )
+
+    with curve_col2:
+        st.plotly_chart(
+            roc_figure,
+            use_container_width=True,
+            key="ml_roc_curve",
+        )
+
+    st.markdown("#### Top Benchmark Model Diagnostics")
+
+    confusion = recommended_metrics.get("confusion_matrix", {})
+
+    confusion_df = pd.DataFrame(
+        [
+            [
+                confusion.get("true_negative", 0),
+                confusion.get("false_positive", 0),
+            ],
+            [
+                confusion.get("false_negative", 0),
+                confusion.get("true_positive", 0),
+            ],
+        ],
+        index=["Actual Negative", "Actual Positive"],
+        columns=["Predicted Negative", "Predicted Positive"],
+    )
+
+    diagnostic_col1, diagnostic_col2 = st.columns([1.15, 1])
+
+    with diagnostic_col1:
+        st.markdown("##### Confusion Matrix")
+        st.dataframe(
+            confusion_df,
+            use_container_width=True,
+        )
+
+    with diagnostic_col2:
+        st.markdown("##### Performance Summary")
+
+        st.metric(
+            "Precision",
+            f"{recommended_metrics.get('precision', 0):.4f}",
+        )
+        st.metric(
+            "Recall",
+            f"{recommended_metrics.get('recall', 0):.4f}",
+        )
+        st.metric(
+            "ROC-AUC",
+            f"{recommended_metrics.get('roc_auc', 0):.4f}",
+        )
+
+    st.markdown("#### How to interpret the benchmark")
+
+    st.markdown(
+        """
+        - **Precision** shows how many predicted positive cases were correct.
+        - **Recall** shows how many actual positive cases were detected.
+        - **F1** balances precision and recall.
+        - **ROC-AUC** measures ranking performance across thresholds.
+        - **PR-AUC** is especially useful when the positive class is rare.
+        """
+    )
 
 render_header()
 st.divider()
@@ -785,6 +1155,29 @@ st.divider()
 if df is None:
     render_getting_started()
 else:
+    current_verification_signature = (
+        uploaded_file_signature(uploaded_file),
+        target_column,
+        dataset_name,
+    )
+
+    current_verification_result = st.session_state.get("verification_result")
+
+    verification_unlocked = (
+        current_verification_result is not None
+        and st.session_state.get("verification_signature")
+        == current_verification_signature
+        and current_verification_result
+        .get("leakage", {})
+        .get("risk_count", 0)
+        == 0
+    )
+
+    def workspace_label(name):
+        if name == "Machine Learning" and not verification_unlocked:
+            return "Machine Learning 🔒"
+        return name
+
     workspace = st.radio(
         "Workspace",
         [
@@ -792,10 +1185,12 @@ else:
             "Explore",
             "Target Analysis",
             "Verification",
+            "Machine Learning",
         ],
         horizontal=True,
         label_visibility="collapsed",
         key="workspace_nav",
+        format_func=workspace_label,
     )
 
     st.divider()
@@ -818,6 +1213,13 @@ else:
         )
     elif workspace == "Verification":
         render_verification(
+            uploaded_file,
+            df,
+            target_column,
+            dataset_name,
+        )
+    elif workspace == "Machine Learning":
+        render_machine_learning(
             uploaded_file,
             df,
             target_column,
